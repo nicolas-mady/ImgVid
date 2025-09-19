@@ -1,4 +1,5 @@
 import numpy as np
+from collections import Counter
 
 
 def bright(img):
@@ -19,8 +20,8 @@ def neg(img):
 
 def global_hist(img, *, ret=False):
     hist = [0] * 768
-    for ln in img:
-        for col in ln:
+    for row in img:
+        for col in row:
             b, g, r = map(int, col)
             hist[r] += 1
             hist[g + 256] += 1
@@ -32,12 +33,17 @@ def global_hist(img, *, ret=False):
     print("✅ Saved global-histogram.txt")
 
 
-def local_hist(img):
-    h = img.shape[0] // 3
-    pt1 = img[:h]
-    pt2 = img[h:2*h]
-    pt3 = img[2*h:]
-    hist = global_hist(pt1, 1) + global_hist(pt2, 1) + global_hist(pt3, 1)
+def local_hist(img, k=3, o='h'):
+    d = {o: img.shape[0] // k}
+    if o == 'h':
+        h = img.shape[0] // k
+        pts = [img[i*h:(i+1)*h] for i in range(k)]
+    else:
+        w = img.shape[1] // k
+        pts = [img[:, i*w:(i+1)*w] for i in range(k)]
+    hist = []
+    for pt in pts:
+        hist += global_hist(pt, ret=True)
     with open("local-histogram.txt", "w") as f:
         f.write(str(hist))
     print("✅ Saved local-histogram.txt")
@@ -86,7 +92,7 @@ def compression_and_expansion(img):
                 new[i, j] = img[i, j] // 2 + 128
     return np.uint8(new)
 
-# dente de serra
+
 def sawtooth_wave(img):
     return np.uint8(img % 64 / 63 * 255)
 
@@ -97,7 +103,7 @@ def logarithmic_transformation(img):
 
 
 def mean_filter(img, w=7, it=3):
-    new = np.zeros_like(img)
+    new = np.zeros_like(img) + 255
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
@@ -109,24 +115,23 @@ def mean_filter(img, w=7, it=3):
     return mean_filter(new, w, it - 1)
 
 
-def k_neighbor(img, it=3):
-    new = np.zeros_like(img)
+def k_neighbor(img, k=6, it=3):
+    new = np.zeros_like(img) + 255
     rows, cols, *_ = img.shape
     for i in range(1, rows - 1):
         for j in range(1, cols - 1):
-            neighbors = [
-                img[i-1, j-1], img[i-1, j], img[i-1, j+1],
-                img[i, j], img[i, j+1],
-                img[i+1, j], img[i+1, j+1]
-            ]
+            window = img[i-1:i+2, j-1:j+2]
             if _:
+                neighbors = window.reshape(-1, img.shape[2])
+                neighbors = np.sort(neighbors, axis=0)[-k:]
                 new[i, j] = np.mean(neighbors, axis=0)
             else:
+                neighbors = np.sort(window.flatten())[-k:]
                 new[i, j] = np.mean(neighbors)
     new = np.uint8(new)
     if it == 1:
         return new
-    return k_neighbor(new, it - 1)
+    return k_neighbor(new, k, it - 1)
 
 
 def median_filter(img, w=7, it=3):
@@ -143,13 +148,17 @@ def median_filter(img, w=7, it=3):
 
 
 def moden_filter(img, w=7, it=3):
-    new = np.zeros_like(img)
+    new = np.zeros_like(img) + 255
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
         for j in range(p, cols - p):
-            new[i, j] = np.bincount(img[i-p:i+p+1, j-p:j+p+1].ravel(), minlength=256).argmax()
+            if _:
+                new[i, j] = Counter(img[i-p:i+p+1, j-p:j+p+1].reshape(-1, img.shape[2]).tolist()).most_common(1)[0][0]
+            else:
+                new[i, j] = Counter(img[i-p:i+p+1, j-p:j+p+1].ravel()).most_common(1)[0][0]
     new = np.uint8(new)
     if it == 1:
         return new
     return moden_filter(new, w, it - 1)
+
