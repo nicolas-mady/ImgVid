@@ -1,19 +1,16 @@
 import numpy as np
-from math import log
 
 
 def bright(img):
     try:
         factor = float(input("fator de brilho:\n"))
     except ValueError:
-        factor = 1.2
+        factor = 1.25
     return np.uint8(np.clip(img * factor, 0, 255))
 
 
 def grey(img):
-    new = np.uint8(img @ [.1, .6, .3])
-    print(new.shape)
-    return new
+    return np.uint8(img @ [.1, .6, .3])
 
 
 def neg(img):
@@ -46,16 +43,16 @@ def local_hist(img):
     print("✅ Saved local-histogram.txt")
 
 
-def linear_contrast_expansion(img, i=0, a=0, b=255, n=255):
+def linear_contrast_expansion(img, a=0, b=255):
     new = np.zeros_like(img)
     for i, row in enumerate(img):
         for j, px in enumerate(row):
             if px < a:
                 new[i, j] = 0
             elif px > b:
-                new[i, j] = n
+                new[i, j] = 255
             else:
-                new[i, j] = (px - a) / (b - a) * n
+                new[i, j] = (px - a) / (b - a) * 255
     return new
 
 """ 
@@ -76,6 +73,7 @@ def histogram_equalization(img):
             new[i, j] = lut[px]
     return new """
 
+
 def compression_and_expansion(img):
     new = np.zeros_like(img)
     for i, row in enumerate(img):
@@ -94,7 +92,64 @@ def sawtooth_wave(img):
 
 
 def logarithmic_transformation(img):
-    c = 255 / log(1 + 255)
+    c = 255 / np.log(1 + 255)
     return np.uint8(c * np.log(1 + img))
 
 
+def mean_filter(img, w=7, it=3):
+    new = np.zeros_like(img)
+    rows, cols, *_ = img.shape
+    p = w // 2
+    for i in range(p, rows - p):
+        for j in range(p, cols - p):
+            new[i, j] = np.mean(img[i-p:i+p+1, j-p:j+p+1], axis=(0, 1))
+    new = np.uint8(new)
+    if it == 1:
+        return new
+    return mean_filter(new, w, it - 1)
+
+
+def k_neighbor(img, it=3):
+    new = np.zeros_like(img)
+    rows, cols, *_ = img.shape
+    for i in range(1, rows - 1):
+        for j in range(1, cols - 1):
+            neighbors = [
+                img[i-1, j-1], img[i-1, j], img[i-1, j+1],
+                img[i, j], img[i, j+1],
+                img[i+1, j], img[i+1, j+1]
+            ]
+            if _:
+                new[i, j] = np.mean(neighbors, axis=0)
+            else:
+                new[i, j] = np.mean(neighbors)
+    new = np.uint8(new)
+    if it == 1:
+        return new
+    return k_neighbor(new, it - 1)
+
+
+def median_filter(img, w=7, it=3):
+    new = np.zeros_like(img)
+    rows, cols, *_ = img.shape
+    p = w // 2
+    for i in range(p, rows - p):
+        for j in range(p, cols - p):
+            new[i, j] = np.median(img[i-p:i+p+1, j-p:j+p+1], axis=(0, 1))
+    new = np.uint8(new)
+    if it == 1:
+        return new
+    return median_filter(new, w, it - 1)
+
+
+def moden_filter(img, w=7, it=3):
+    new = np.zeros_like(img)
+    rows, cols, *_ = img.shape
+    p = w // 2
+    for i in range(p, rows - p):
+        for j in range(p, cols - p):
+            new[i, j] = np.bincount(img[i-p:i+p+1, j-p:j+p+1].ravel(), minlength=256).argmax()
+    new = np.uint8(new)
+    if it == 1:
+        return new
+    return moden_filter(new, w, it - 1)
