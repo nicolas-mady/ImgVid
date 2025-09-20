@@ -1,5 +1,6 @@
 import numpy as np
 from collections import Counter
+# import cv2 as cv
 
 
 def bright(img):
@@ -61,6 +62,7 @@ def linear_contrast_expansion(img, a=0, b=255):
                 new[i, j] = (px - a) / (b - a) * 255
     return new
 
+
 """ 
 def thresholding(img, th=128, n=255):
     return np.uint8((img >= th) * n)
@@ -77,7 +79,8 @@ def histogram_equalization(img):
     for i, row in enumerate(img):
         for j, px in enumerate(row):
             new[i, j] = lut[px]
-    return new """
+    return new
+"""
 
 
 def compression_and_expansion(img):
@@ -103,7 +106,7 @@ def logarithmic_transformation(img):
 
 
 def mean_filter(img, w=7, it=3):
-    new = np.zeros_like(img) + 255
+    new = img.copy()
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
@@ -116,7 +119,7 @@ def mean_filter(img, w=7, it=3):
 
 
 def k_neighbor(img, k=6, it=3):
-    new = np.zeros_like(img) + 255
+    new = img.copy()
     rows, cols, *_ = img.shape
     for i in range(1, rows - 1):
         for j in range(1, cols - 1):
@@ -147,18 +150,205 @@ def median_filter(img, w=7, it=3):
     return median_filter(new, w, it - 1)
 
 
-def moden_filter(img, w=7, it=3):
-    new = np.zeros_like(img) + 255
+def mode_filter(img, w=7, it=3):
+    new = img.copy()
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
         for j in range(p, cols - p):
             if _:
-                new[i, j] = Counter(img[i-p:i+p+1, j-p:j+p+1].reshape(-1, img.shape[2]).tolist()).most_common(1)[0][0]
+                for k in range(3):
+                    new[i, j, k] = Counter(img[i-p:i+p+1, j-p:j+p+1, k].ravel()).most_common(1)[0][0]
             else:
                 new[i, j] = Counter(img[i-p:i+p+1, j-p:j+p+1].ravel()).most_common(1)[0][0]
     new = np.uint8(new)
     if it == 1:
         return new
-    return moden_filter(new, w, it - 1)
+    return mode_filter(new, w, it - 1)
 
+
+def pepper_and_salt(img):
+    new = img.copy()
+    for row in new:
+        for j in range(len(row)):
+            if np.random.rand() <= 0.1:
+                row[j] = 0 if np.random.rand() <= 0.5 else 255
+    return new
+
+
+# def quantizacao_kmeans(img, k=64):
+#     dados = img.reshape((-1, 3))
+#     dados = np.float32(dados)
+    
+#     criterios = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+#     _, rotulos, centros = cv.kmeans(dados, k, None, criterios, 10, cv.KMEANS_RANDOM_CENTERS)
+    
+#     centros = np.uint8(centros)
+#     img_quantizada = centros[rotulos.flatten()]
+#     img_quantizada = img_quantizada.reshape(img.shape)
+    
+#     return img_quantizada
+
+
+# def sobel(img):
+#     if len(img.shape) == 3:
+#         img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    
+#     new = np.zeros_like(img, dtype=np.float32)
+
+#     mx = np.array([[-1, 0, 1], 
+#                    [-2, 0, 2], 
+#                    [-1, 0, 1]], dtype=np.float32)
+    
+#     my = np.array([[-1, -2, -1], 
+#                    [ 0,  0,  0], 
+#                    [ 1,  2,  1]], dtype=np.float32)
+    
+#     h, w = img.shape
+    
+#     for ln in range(1, h-1):
+#         for col in range(1, w-1):
+#             window = np.array([
+#                 [img[ln-1, col-1], img[ln-1, col], img[ln-1, col+1]],
+#                 [img[ln, col-1],   img[ln, col],   img[ln, col+1]],
+#                 [img[ln+1, col-1], img[ln+1, col], img[ln+1, col+1]]
+#             ], dtype=np.float32)
+            
+#             gx = np.sum(window * mx)
+#             gy = np.sum(window * my)
+            
+#             new[ln, col] = np.sqrt(gx**2 + gy**2)
+    
+#     new = cv.normalize(new, None, 0, 255, cv.NORM_MINMAX)
+#     return new.astype(np.uint8)
+
+
+# def prewitt(img):
+#     if len(img.shape) == 3:
+#         img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    
+#     new = np.zeros_like(img, dtype=np.float32)
+    
+
+#     mx = np.array([[-1, 0, 1],
+#                    [-2, 0, 2],
+#                    [-1, 0, 1]], dtype=np.float32)
+
+#     my = np.array([[-1, -2, -1],
+#                    [ 0,  0,  0],
+#                    [ 1,  2,  1]], dtype=np.float32)
+
+#     h, w = img.shape
+
+#     for ln in range(1, h-1):
+#         for col in range(1, w-1):
+#             window = np.array([
+#                 [img[ln-1, col-1], img[ln-1, col], img[ln-1, col+1]],
+#                 [img[ln, col-1],   img[ln, col],   img[ln, col+1]],
+#                 [img[ln+1, col-1], img[ln+1, col], img[ln+1, col+1]]
+#             ], dtype=np.float32)
+
+#             gx = np.sum(window * mx)
+#             gy = np.sum(window * my)
+
+#             new[ln, col] = np.sqrt(gx**2 + gy**2)
+
+#     new = cv.normalize(new, None, 0, 255, cv.NORM_MINMAX)
+#     return new.astype(np.uint8)
+
+
+# def img_bordas_branco(img, k=64):
+#     img_quantizada = quantizacao_kmeans(img, k)
+
+#     bordas_sobel = sobel(img_quantizada)
+
+#     img_bordas_branco = np.ones_like(img) * 255  
+#     mask_sobel = bordas_sobel > 50  
+#     img_bordas_branco[mask_sobel] = [255, 0, 0]  
+
+#     return img_bordas_branco
+
+
+# def img_bordas_original(img, k=64):
+#     img_quantizada = quantizacao_kmeans(img, k)
+
+#     bordas_sobel = sobel(img_quantizada)
+
+#     img_bordas_branco = np.ones_like(img) * 255
+#     mask_sobel = bordas_sobel > 50
+#     img_bordas_branco[mask_sobel] = [255, 0, 0] 
+
+#     img_bordas_original = img_quantizada.copy()
+#     img_bordas_original[mask_sobel] = [255, 0, 0] 
+
+#     return img_bordas_original
+
+
+# def bordas_sobel(img, k=64):
+#     img_quantizada = quantizacao_kmeans(img, k)
+
+#     bordas_sobel = sobel(img_quantizada)
+
+#     return bordas_sobel
+
+# def bordas_prewitt(img, k=64):
+#     img_quantizada = quantizacao_kmeans(img, k)
+
+#     bordas_prewitt = prewitt(img_quantizada)
+
+#     return bordas_prewitt
+
+
+# def img_quantizada(img, k=64):
+#     img_quantizada = quantizacao_kmeans(img, k)
+
+#     return img_quantizada
+
+
+# def descritor_bic(img, threshold=50):
+#     bordas = sobel(img)
+
+#     img_original = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+#     dados = img.reshape((-1, 3))
+#     dados = np.float32(dados)
+    
+#     criterios = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+#     _, _, centros = cv.kmeans(dados, 64, None, criterios, 10, cv.KMEANS_RANDOM_CENTERS)
+    
+#     centros_quantizacao = np.uint8(centros)
+    
+#     mascara_bordas = bordas > threshold
+    
+#     n_cores = len(centros_quantizacao)
+#     hist_bordas = np.zeros(n_cores)
+#     hist_interior = np.zeros(n_cores)
+    
+#     altura, largura = img.shape[:2]
+    
+#     for i in range(altura):
+#         for j in range(largura):
+#             pixel = img[i, j]
+#             distancias = np.sqrt(np.sum((centros_quantizacao - pixel)**2, axis=1))
+#             idx_cor = np.argmin(distancias)
+            
+#             if mascara_bordas[i, j]:
+#                 hist_bordas[idx_cor] += 1
+#             else:
+#                 hist_interior[idx_cor] += 1
+    
+#     hist_bordas = hist_bordas / np.sum(hist_bordas) if np.sum(hist_bordas) > 0 else hist_bordas
+#     hist_interior = hist_interior / np.sum(hist_interior) if np.sum(hist_interior) > 0 else hist_interior
+    
+#     img_apenas_bordas = np.ones_like(img) * 255 
+#     img_apenas_interior = np.ones_like(img) * 255  
+    
+#     for i in range(altura):
+#         for j in range(largura):
+#             if mascara_bordas[i, j]:
+#                 img_apenas_bordas[i, j] = img[i, j]  
+#             else:
+#                 img_apenas_interior[i, j] = img[i, j]  
+    
+#     return hist_bordas
+# # , hist_interior, img_apenas_bordas, img_apenas_interior, mascara_bordas
