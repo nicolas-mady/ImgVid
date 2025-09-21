@@ -1,4 +1,5 @@
 import numpy as np
+import cv2 as cv
 
 
 def bright(img):
@@ -32,16 +33,16 @@ def global_hist(img, nome="q3.txt", *, ret=False):
     print(f"✅ Saved {nome}")
 
 
-def local_hist(img, k=3, o='h', nome='q4.txt'):
-    if o == 'h':
-        h = img.shape[0] // k
-        pts = [img[i*h:(i+1)*h] for i in range(k)]
-    else:
-        w = img.shape[1] // k
-        pts = [img[:, i*w:(i+1)*w] for i in range(k)]
-    hist = []
+def local_hist(img):
+    h = img.shape[0] // 3
+    pts = [img[i*h:(i+1)*h] for i in range(3)]
+    cv.imwrite("top.jpg", pts[0])
+    cv.imwrite("mid.jpg", pts[1])
+    cv.imwrite("bot.jpg", pts[2])
+    histograms = []
     for pt in pts:
-        hist += global_hist(pt, ret=True)
-    with open(nome, "w") as f:
-        f.write(str(hist))
-    print(f"✅ Saved {nome}")
+        histograms += global_hist(pt, ret=True).tolist()
+    hist = np.array(histograms)
+    with open("q4.txt", "w") as f:
+        np.savetxt(f, hist, fmt='%d', newline=' ')
+    print(f"✅ Saved q4.txt")

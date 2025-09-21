@@ -1,9 +1,18 @@
 import numpy as np
-from collections import Counter
+
+
+def sal_pimenta(img):
+    new = img.copy()
+    for row in new:
+        for j in range(len(row)):
+            if np.random.rand() <= 0.1:
+                row[j] = 0 if np.random.rand() <= 0.5 else 255
+    return new
 
 
 def media(img, w=7, it=3):
-    new = img.copy()
+    img = sal_pimenta(img)
+    new = np.ones_like(img) * 255
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
@@ -16,7 +25,8 @@ def media(img, w=7, it=3):
 
 
 def kvizinhos(img, k=6, it=3):
-    new = img.copy()
+    img = sal_pimenta(img)
+    new = np.ones_like(img) * 255
     rows, cols, *_ = img.shape
     for i in range(1, rows - 1):
         for j in range(1, cols - 1):
@@ -35,7 +45,8 @@ def kvizinhos(img, k=6, it=3):
 
 
 def mediana(img, w=7, it=3):
-    new = np.zeros_like(img)
+    img = sal_pimenta(img)
+    new = np.ones_like(img) * 255
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
@@ -47,28 +58,21 @@ def mediana(img, w=7, it=3):
     return mediana(new, w, it - 1)
 
 
-def moda(img, w=7, it=3):
-    new = img.copy()
+def moda(img, w=7, it=1):
+    img = sal_pimenta(img)
+    new = np.ones_like(img) * 255
     rows, cols, *_ = img.shape
     p = w // 2
     for i in range(p, rows - p):
         for j in range(p, cols - p):
             if _:
                 for k in range(3):
-                    new[i, j, k] = Counter(img[i-p:i+p+1, j-p:j+p+1, k].ravel()).most_common(1)[0][0]
+                    window_channel = img[i-p:i+p+1, j-p:j+p+1, k].ravel()
+                    new[i, j, k] = np.bincount(window_channel).argmax()
             else:
-                new[i, j] = Counter(img[i-p:i+p+1, j-p:j+p+1].ravel()).most_common(1)[0][0]
+                window = img[i-p:i+p+1, j-p:j+p+1].ravel()
+                new[i, j] = np.bincount(window).argmax()
     new = np.uint8(new)
     if it == 1:
         return new
     return moda(new, w, it - 1)
-
-
-def sal_pimenta(img):
-    new = img.copy()
-    for row in new:
-        for j in range(len(row)):
-            if np.random.rand() <= 0.1:
-                row[j] = 0 if np.random.rand() <= 0.5 else 255
-    return new
-

@@ -1,35 +1,38 @@
-import os
-import sys
+from inspect import isfunction
+
 import cv2 as cv
-import image_processing as imp
 
-fmts = ".jpg", ".png", ".jpeg"
-argv = sys.argv[1:] or [a for a in os.listdir() if a.endswith(fmts)]
+import basics
+import radiometrics
+import filters
+import borders
+import bic
 
-if not argv:
-    print("⚠️  Usage: python main.py [path/to/image1.jpg image2.png ...]")
-    print("ℹ️  Or bring images to the current directory")
-    print("ℹ️  Supported formats:", ", ".join(fmts))
-    sys.exit(0)
-
-funcs = *filter(callable, imp.__dict__.values()),
-
-for src in argv:
-    # try:
+for src, mod in (
+    ('im0.jpg', basics),
+    ('im1.jpg', radiometrics),
+    ('im2.jpg', filters),
+    ('im3.jpg', borders),
+    ('im3.jpg', bic),
+):
     img = cv.imread(src)
-    # except:
-    #     # print("⚠️  Error reading", src + ":", e)
-    #     img = cv.imread(src, cv.IMREAD_GRAYSCALE)
 
     if img is None:
+        print('❌ Could not read', src)
         continue
 
-    src = src.rsplit(".", 1)
+    src = src.rsplit('.', 1)
 
-    for f in funcs:
-        dst = f"-{f.__name__}.".join(src)
-        new = f(img)
-        if new is None:
-            continue
-        if cv.imwrite(dst, new):
-            print("✅ Saved", dst)
+    for f in filter(isfunction, mod.__dict__.values()):
+        res = f(img)
+        if not isinstance(res, tuple):
+            res = (res,)
+        sf = ''
+        for new in res:
+            if new is None:
+                continue
+            dst = f'-{f.__name__}{sf}.'.join(src)
+            # dst = 't0.jpg'
+            if cv.imwrite(dst, new):
+                print('✅ Saved', dst)
+            sf = '-bordas'

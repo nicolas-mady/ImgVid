@@ -5,12 +5,13 @@ def contraste_linear(img, a=0, b=255):
     new = img.copy()
     for i, row in enumerate(img):
         for j, px in enumerate(row):
-            if px < a:
-                new[i, j] = 0
-            elif px > b:
-                new[i, j] = 255
-            else:
-                new[i, j] = (px - a) / (b - a) * 255
+            for k in range(3):
+                if px[k] < a:
+                    new[i, j, k] = 0
+                elif px[k] > b:
+                    new[i, j, k] = 255
+                else:
+                    new[i, j, k] = (px[k] - a) / (b - a) * 255
     return new
 
 
@@ -18,12 +19,13 @@ def compressao_expansao(img):
     new = img.copy()
     for i, row in enumerate(img):
         for j, px in enumerate(row):
-            if px <= 85:
-                new[i, j] = img[i, j] // 2
-            elif px < 170:
-                new[i, j] = img[i, j] * 2 - 127
-            else:
-                new[i, j] = img[i, j] // 2 + 128
+            for k in range(3):
+                if px[k] <= 85:
+                    new[i, j, k] = img[i, j, k] // 2
+                elif px[k] < 170:
+                    new[i, j, k] = int(img[i, j, k]) * 2 - 127
+                else:
+                    new[i, j, k] = img[i, j, k] // 2 + 128
     return np.uint8(new)
 
 
@@ -34,8 +36,3 @@ def dente_serra(img):
 def log(img):
     # c = 255 / np.log(1 + 255)
     return np.uint8(46 * np.log(np.clip(img, 1, 255)))
-
-
-def threshold(img, *, th=128, n=255, wb=False):
-    img = img < th if wb else img >= th
-    return np.uint8(np.clip(img * n, 0, 255))

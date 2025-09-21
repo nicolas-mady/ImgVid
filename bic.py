@@ -1,6 +1,6 @@
 import numpy as np
 import cv2 as cv
-from basics import global_hist
+import basics
 
 
 def bic(img, k=64):
@@ -31,6 +31,6 @@ def bic(img, k=64):
             else:
                 img_bordas[i, j] = img[i, j]
 
-    global_hist(img_bordas, 'q8.1.txt')
-    global_hist(img_interior, 'q8.2.txt')
+    basics.global_hist(img_bordas, 'q8.1.txt')
+    basics.global_hist(img_interior, 'q8.2.txt')
     return img_interior, img_bordas
